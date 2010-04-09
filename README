@@ -1,0 +1,2 @@
+The purpose of this becnhmark suite is to have a good idea about the relative performance of various operations. 
+Questions like how much faster is an atomic increment than pthread_mutex, etc.
