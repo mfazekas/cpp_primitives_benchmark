@@ -33,10 +33,13 @@ public:
         while(!in_wait_for_start) {}
     }
     void join() {
-        pthread_join(thread,0);
+        void* result = 0;
+        pthread_join(thread,&result);
+        started = false;
         thread = 0;
     }
     virtual ~Thread() {
+        if (started) join();
     }
     virtual void run(const Param& param) = 0;
 private:
