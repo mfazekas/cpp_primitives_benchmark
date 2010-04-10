@@ -45,7 +45,7 @@ public:
     
     virtual int defaultRounds() const = 0;
     
-    ~IPerfTest();   
+    virtual ~IPerfTest();   
 };
 
 #endif // IPerfTestHeader
