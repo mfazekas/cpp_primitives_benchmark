@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010, Miklós Fazekas
+Copyright (c) 2007-, Miklós Fazekas
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -28,35 +28,41 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Utils/Thread.h"
+#include "Thread.h"
  
 #include "PerfTestBase.h"
 #include "PerfTestRegistry.h"
 
 #include <sstream>
-#include <libkern/OSAtomic.h>
+#include <pthread.h>
 
-typedef int32_t AtomicIncrementInt;
-inline void AtomicIncrement(volatile AtomicIncrementInt* ptr) {
-    OSAtomicIncrement32(ptr);
-}
-
-class AtomicIncrementPerfTest : public PerfTestBase {
+class PThreadMutexPerfTest : public PerfTestBase {
+    virtual void setup(int& roudnds_,int fourtytwo_,int random_) {
+        pthread_mutex_init(&mutex, 0);
+    }
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        AtomicIncrementInt result = random_;
+        counter = random_;
         for (int i = 0; i < rounds_; ++i) {
-            AtomicIncrement(&result);
+            pthread_mutex_lock(&mutex);
+            counter++;
+            pthread_mutex_unlock(&mutex);
         }
-        return result;
+        return counter;
+    }
+    virtual void teardown(int& rounds_,int fourtytwo_,int random_) {
+        pthread_mutex_destroy(&mutex);
     }
     std::string name() const {
-        return "uncontended atomic_increment";
+        return "uncontended pthread_mutex";
     }
+    pthread_mutex_t mutex;
+    volatile int counter;
 };
 
-class ContendedAtomicIncrementPerfTest : public PerfTestBase {
+class ContendedPthreadMutexPerfTest : public PerfTestBase {
 public:
     virtual void setup(int& roudnds_,int fourtytwo_,int random_) {
+        pthread_mutex_init(&mutex, 0);
         for (int i = 0; i < (thread_num-1); ++i) {
             threads.push_back(new IncrementThread(this) );
         }
@@ -72,7 +78,9 @@ public:
             (*i)->start();
         }
         for (int i = 0; i < rounds; ++i) {
-            AtomicIncrement(&number);
+            pthread_mutex_lock(&mutex);
+            number++;
+            pthread_mutex_unlock(&mutex);
         }
         for (std::vector<IncrementThread*>::const_iterator i = threads.begin(); i != threads.end(); ++i) {
             (*i)->join();
@@ -84,35 +92,34 @@ public:
             delete *i;
         }
         threads.clear();
+        pthread_mutex_destroy(&mutex);
     }
     std::string name() const {
         std::ostringstream os;
-        os << thread_num << " contended atomic_increment";
+        os << thread_num << " contended pthread_mutex";
         return os.str();
     }
     
-    class IncrementThread: public Thread<ContendedAtomicIncrementPerfTest*> {
+    class IncrementThread: public Thread<ContendedPthreadMutexPerfTest*> {
     public:
-        IncrementThread(ContendedAtomicIncrementPerfTest* param) :
-            Thread<ContendedAtomicIncrementPerfTest*>(param) {}
-        virtual void run( ContendedAtomicIncrementPerfTest* const& param) {
-            volatile AtomicIncrementInt* num = &(param->number);
+        IncrementThread(ContendedPthreadMutexPerfTest* param) :
+            Thread<ContendedPthreadMutexPerfTest*>(param) {}
+        virtual void run( ContendedPthreadMutexPerfTest* const& param) {
+            pthread_mutex_t& mutex = (param->mutex);
+            volatile int* number = &(param->number);
             for (int i = 0; i < param->rounds; ++i) {
-                AtomicIncrement(num);
+                pthread_mutex_lock(&mutex);
+                number++;
+                pthread_mutex_unlock(&mutex);
             }
         }
     };
     static const int thread_num = 2;
-    volatile AtomicIncrementInt number;
+    pthread_mutex_t mutex;
+    volatile int number;
     int rounds;
     std::vector<IncrementThread*> threads;
 };
 
-
-#define PERFTEST_REGISTER(name,new_expression) \
-    static struct _RegClass##name { _RegClass##name() { PerfTestRegistry::instance().registerPerfTest(new_expression); }} _reg##name;
-
-PERFTEST_REGISTER(AtomicIncrement,new AtomicIncrementPerfTest());
-
-
-PERFTEST_REGISTER(ContendedAtomicIncrementPerfTest,(new ContendedAtomicIncrementPerfTest()));
+PERFTEST_REGISTER(PThreadMutexPerfTest,(new PThreadMutexPerfTest()));
+PERFTEST_REGISTER(ContendedPthreadMutexPerfTest,(new ContendedPthreadMutexPerfTest()));
