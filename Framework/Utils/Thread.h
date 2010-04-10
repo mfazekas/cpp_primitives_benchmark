@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pthread.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #define PTHREAD_CHECK(res) if (int err = res) { fprintf(stderr,#res" failed:%d",err); exit(1); }
