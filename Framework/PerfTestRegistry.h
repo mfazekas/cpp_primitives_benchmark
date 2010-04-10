@@ -49,3 +49,4 @@ private:
     static struct _RegClass##name { _RegClass##name() { PerfTestRegistry::instance().registerPerfTest(new_expression); }} _reg##name;
  
 #endif // PerfRegistryHeader
+
