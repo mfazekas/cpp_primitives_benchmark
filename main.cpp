@@ -1,5 +1,3 @@
-#import <Foundation/Foundation.h>
-
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -218,11 +216,6 @@ void benchmarkAll(const std::vector<IPerfTest*>& perfTests_,IReporter& reporter)
 
 
 int main (int argc, const char * argv[]) {
-    NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
-
-    // insert code here...
-    NSLog(@"Hello, World!");
-    
     PerfTestRegistry& registry = PerfTestRegistry::instance();
     registry.registerPerfTest(new RegisterAddPerfTest());
     registry.registerPerfTest(new VolatileAddPerfTest());
@@ -239,7 +232,5 @@ int main (int argc, const char * argv[]) {
     
     Reporter reporter;
     benchmarkAll(registry.get(),reporter);
-    
-    [pool drain];
     return 0;
 }
