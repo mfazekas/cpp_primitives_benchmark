@@ -1,3 +1,33 @@
+/*
+Copyright (c) 2007-, Miklós Fazekas
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+   must display the following acknowledgement:
+   This product includes software developed by the <organization>.
+4. Neither the name of the <organization> nor the
+   names of its contributors may be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -5,137 +35,6 @@
 #include "IPerfTest.h"
 #include "PerfTestBase.h"
 #include "PerfTestRegistry.h"
-
-class RegisterAddPerfTest : public PerfTestBase {
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        int result = random_;
-        for (int i = 0; i < rounds_; ++i) {
-            result += random_;
-        }
-        return result;
-    }
-    std::string name() const {
-        return "register int::operator+=";
-    }
-};
-
-class VirtualCallPerfTest : public PerfTestBase {
-public:
-    class Base {
-    public:
-        virtual void call() = 0;
-    };
-    
-    class Base1 : public Base {
-    public:
-        virtual void call() {}
-    };
-    class Base2 : public Base {
-    public:
-        virtual void call() {}
-    };
-    
-
-    virtual void setup(int& rounds_,int fourtytwo_,int random_) {
-        base = new Base2();
-    }
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        for (int i = 0; i < rounds_; ++i) {
-            base->call();
-        }
-        return 0;
-    }
-    virtual void teardown(int rounds_,int fourtytwo_,int random_) {
-        delete base; base = 0;
-    }
-    std::string name() const {
-        return "c++virtualmethodcall";
-    }    
-    Base* base;
-};
-
-
-template <int size>
-class MallocFreeCallPerfTest : public PerfTestBase {
-public:
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        int result = 0;
-        for (int i = 0; i < rounds_; ++i) {
-            void* x  = malloc(fourtytwo_-42+size);
-            result += reinterpret_cast<ptrdiff_t>(x);
-            free(x);
-        }
-        return result;
-    }
-    std::string name() const {
-        std::ostringstream os;
-        os << "mallocfree-" << size;
-        return os.str();
-    }    
-};
-
-template <int size,int batchsize>
-class LotMallocFreeCallPerfTest : public PerfTestBase {
-public:
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        int result = 0;
-        rounds_ -= rounds_ % batchsize;
-        for (int i = 0; i < rounds_/batchsize; ++i) {
-            void* ptrs[batchsize];
-            for (int j =0; j < batchsize; ++j) {
-                ptrs[j] = malloc(fourtytwo_-42+size);
-            }
-            result += reinterpret_cast<ptrdiff_t>(ptrs[0]);
-            for (int j =0; j < batchsize; ++j) {
-                free(ptrs[j]);
-            }
-        }
-        return result;
-    }
-    std::string name() const {
-        std::ostringstream os;
-        os << "mallocfree-" << size << "batch-" << batchsize;
-        return os.str();
-    }    
-};
-
-template <int size>
-class MemCpyPerfTest : public PerfTestBase {
-public:
-    virtual int perform(int& rounds_,int fourtytwo_,int random_) {
-        int32_t result;
-        for (int i = 0; i < rounds_; ++i) {
-            int idx = i*(fourtytwo_-42);
-            memcpy(src+idx,dest+idx,size);
-        }
-        return result;
-        
-    }
-    
-    std::string name() const {
-        std::ostringstream os;
-        os << "MemCpyPerfTest<" << size << ">";
-        return os.str();
-    }
-    
-    char dest[42+size];
-    char src[42+size];
-};
-
-
-class VolatileAddPerfTest : public PerfTestBase {
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        int32_t result;
-        for (int i = 0; i < rounds_; ++i) {
-            result += random_;
-        }
-        return result;
-    }
-    std::string name() const {
-        return "volatile int::operator+=";
-    }
-    volatile int result;
-};
 
 #include <sys/time.h>
 
@@ -194,11 +93,54 @@ public:
     virtual void report(IPerfTest& perfTest, int rounds,const Time& time) = 0;
 };
 
-class Reporter : public IReporter {
+class TextReporter : public IReporter {
 public:
     virtual void report(IPerfTest& perfTest,int rounds,const Time& time) {
-        std::cerr << "name:" << perfTest.name() << ": " << double(rounds)/time.asSeconds() << " " << perfTest.unit() << "/seconds" << std::endl;
+        std::cout << "name:" << perfTest.name() << ": " << double(rounds)/time.asSeconds() << " " << perfTest.unit() << "/seconds" << std::endl;
     }
+};
+
+#include <map>
+
+using std::string;
+
+class XMLReporter : public IReporter {
+public:
+    XMLReporter(std::ostream& os) : os(os) { start(); }
+    ~XMLReporter() { stop(); }
+    
+    string xmlquote(const std::string& input) {
+        string toquote = "<>";
+        std::map<char,string> replace_table;
+        replace_table['<'] = "&lt;";
+        replace_table['>'] = "&gt;";
+        string result = input;
+        string::size_type begIndex = -1;
+        while ((begIndex = result.find_first_of(toquote,begIndex+1)) != std::string::npos) {
+            result.replace(begIndex,1,replace_table[result[begIndex]]);
+        }
+        return result;
+    }
+    void start() {
+        os << "<reports>" << std::endl;
+    }
+    void stop() {
+        os << "</reports>" << std::endl;
+    }
+    virtual void report(IPerfTest& perfTest,int rounds,const Time& time) {
+        os << "<report>" << std::endl;
+        os << "<name>" << xmlquote(perfTest.name()) << "</name>" << std::endl;
+        os << "<unit>" << std::endl;
+        os << "<name>" << perfTest.unit() << "</name>" << std::endl;
+        os << "<amount>" << rounds << "</amount>" << std::endl;
+        os << "<persec>" << double(rounds)/time.asSeconds() << "</persec>" << std::endl;
+        os << "</unit>" << std::endl;
+        os << "<rounds>" << rounds << "</rounds>" << std::endl;
+        os << "<time>" << time.asSeconds() << "</time>" << std::endl;
+        os << "</report>" << std::endl;
+    }
+private:
+    std::ostream& os;
 };
 
 void benchmarkAll(const std::vector<IPerfTest*>& perfTests_,IReporter& reporter)
@@ -217,20 +159,8 @@ void benchmarkAll(const std::vector<IPerfTest*>& perfTests_,IReporter& reporter)
 
 int main (int argc, const char * argv[]) {
     PerfTestRegistry& registry = PerfTestRegistry::instance();
-    registry.registerPerfTest(new RegisterAddPerfTest());
-    registry.registerPerfTest(new VolatileAddPerfTest());
-    registry.registerPerfTest(new VirtualCallPerfTest());
-    registry.registerPerfTest(new MallocFreeCallPerfTest<10>());
-    registry.registerPerfTest(new MallocFreeCallPerfTest<100>());
-    registry.registerPerfTest(new MallocFreeCallPerfTest<1024>());
-    registry.registerPerfTest(new LotMallocFreeCallPerfTest<10,1024>());
-    registry.registerPerfTest(new LotMallocFreeCallPerfTest<100,1024>());
-    registry.registerPerfTest(new LotMallocFreeCallPerfTest<1024,1024>());
-    registry.registerPerfTest(new MemCpyPerfTest<10>());
-    registry.registerPerfTest(new MemCpyPerfTest<100>());
-    registry.registerPerfTest(new MemCpyPerfTest<1024>());
-    
-    Reporter reporter;
+    //Reporter reporter;
+    XMLReporter reporter(std::cout);
     benchmarkAll(registry.get(),reporter);
     return 0;
 }
