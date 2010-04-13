@@ -45,9 +45,16 @@ public:
             items.push_back(std::make_pair(rand(),nodes+i));
         }
         std::sort(items.begin(),items.end());
-        
         for (int i = 0; i < count; ++i) {
             items[i].second->next = items[(i+1)%count].second;
+        }
+
+        warmup();
+    }
+    void warmup() {
+        Node* act = nodes;
+        for (int i =0 ; i < wssize/sizeof(Node); ++i) {
+            act = act->next;
         }
     }
     ~RandomWalkTests() {
