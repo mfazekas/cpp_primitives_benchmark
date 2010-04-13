@@ -53,13 +53,13 @@ class GetUIDSysCallPerfTest : public PerfTestBase {
 
 class WriteSysCallPerfTest : public PerfTestBase {
     virtual void setup(int& roudnds_,int fourtytwo_,int random_) {
-      fd = open("/dev/null",O_WRONLY);
+      fd = ::open("/dev/null",O_WRONLY);
       if (fd < 0) {
         std::cerr << "failed to open /dev/null:" << errno << std::endl;
       }
     }
-    virtual void teardown(int& roudnds_,int fourtytwo_,int random_) {
-      close(fd);
+    virtual void teardown(int roudnds_,int fourtytwo_,int random_) {
+      ::close(fd);
     }
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
         int result = random_;

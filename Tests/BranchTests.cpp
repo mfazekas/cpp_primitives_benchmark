@@ -27,79 +27,26 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 #include "PerfTestBase.h"
 #include "PerfTestRegistry.h"
-
-class DynamicCastPerfTest : public PerfTestBase {
-public:
-    class Base {
-    public:
-        virtual ~Base() {};
-        
-    };
-    class DerivedA : public Base {
-    public:
-        virtual void dosomething() {}
-    };
-    class DerivedB : public Base {
-    };
-    
-    virtual void setup(int& rounds_,int fourtytwo_,int random_) {
-        b = new DerivedA();
-    }
+#include <stdio.h>
+ 
+class SimpleIfPerfTest : public PerfTestBase {
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
+        int result = 0;
         for (int i = 0; i < rounds_; ++i) {
-            DerivedA* a = dynamic_cast<DerivedA*>(b);
-            if (fourtytwo_ != 42) { a->dosomething(); }
+            if (fourtytwo_ < 42) {
+                fourtytwo_ += 1;
+                fprintf(stderr,"should not happen");
+            }
         }
-        return 0;
+        return result;
     }
     std::string name() const {
-        return "c++dynamiccastfrombasetosub";
-    }    
-    
-    Base* b;
-    
+        return "if branch";
+    }
 };
 
-class VirtualCallPerfTest : public PerfTestBase {
-public:
-    class Base {
-    public:
-        virtual void call() = 0;
-    };
-    
-    class Base1 : public Base {
-    public:
-        virtual void call() {}
-    };
-    class Base2 : public Base {
-    public:
-        virtual void call() {}
-    };
-    
-
-    virtual void setup(int& rounds_,int fourtytwo_,int random_) {
-        base = new Base2();
-    }
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        for (int i = 0; i < rounds_; ++i) {
-            base->call();
-        }
-        return 0;
-    }
-    virtual void teardown(int rounds_,int fourtytwo_,int random_) {
-        delete base; base = 0;
-    }
-    std::string name() const {
-        return "c++virtualmethodcall";
-    }    
-    Base* base;
-};
-
-PERFTEST_REGISTER(VirtualCallPerfTest,new VirtualCallPerfTest());
-PERFTEST_REGISTER(DynamicCastPerfTest,new DynamicCastPerfTest());
-
-
+PERFTEST_REGISTER(SimpleIfPerfTest,new SimpleIfPerfTest());
 
