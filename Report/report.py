@@ -38,8 +38,6 @@ import sys
 from table import Table
 from report_to_table import ReportToTable
 
-test_program = '/Work/MyProjects/PrimitveOperationsPerfTest/build/Release/PrimitveOperationsPerfTest'
-
 def parse_args():
     parser = OptionParser()
     parser.add_option("-t", "--testtool", dest="testtool",
@@ -57,7 +55,7 @@ def parse_args():
 
 def main():
     options = parse_args()
-    out = subprocess.Popen(test_program,stdout=subprocess.PIPE).stdout
+    out = subprocess.Popen(options.testtool,stdout=subprocess.PIPE).stdout
     table = Table()
     reporter = ReportToTable()
     reporter.process_xml(out,table)
