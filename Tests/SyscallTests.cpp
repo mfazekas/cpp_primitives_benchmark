@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/errno.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#include <sstream>
 
 class GetUIDSysCallPerfTest : public PerfTestBase {
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
@@ -76,7 +77,9 @@ class WriteSysCallPerfTest : public PerfTestBase {
 #include <sys/socket.h>
 
 class SendPerfTest : public PerfTestBase {
-    
+public:
+    SendPerfTest(int sendsize) : sendsize(sendsize)
+    {}
     virtual void setup(int& roudnds_,int fourtytwo_,int random_) {
       servsock = ::socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
       if (servsock < 0) 
@@ -93,7 +96,7 @@ class SendPerfTest : public PerfTestBase {
       socklen_t size = sizeof(servaddr);
       ::getsockname(servsock, (struct sockaddr *)&servaddr,&size);
       
-      serverthread = new ServerThread(this);
+      serverthread = new ServerThread(this); 
       serverthread->start();
       
       clientsock = ::socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
@@ -102,24 +105,31 @@ class SendPerfTest : public PerfTestBase {
       if (::connect(clientsock,(struct sockaddr *)&servaddr,size) < 0)
         std::cerr << "failed to connect failed" << errno << std::endl;
     }
-    virtual void teardown(int& roudnds_,int fourtytwo_,int random_) {
-      close(clientsock);
-      close(servsock);
+    virtual void teardown(int roudnds_,int fourtytwo_,int random_) {
+      ::close(clientsock);
+      ::close(servsideofclisock);
+      ::close(servsock);
       serverthread->join();
       delete serverthread;
     }
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
         int result = random_;
         for (int i = 0; i < rounds_; ++i) {
-            result += ::send(clientsock,"",1,0);
+            result += ::send(clientsock,sendbuffer,sendsize,0);
         }
         return result;
     }
     std::string name() const {
-        return "send 0 bytes on TCP loopback";
+        std::ostringstream os;
+        os << "send " << sendsize << " bytes on TCP loopback";
+        return os.str();
     }
     struct sockaddr_in servaddr;
     int servsock;
+    int servsideofclisock;
+    int sendsize;
+    char sendbuffer[1024*1024];
+    
     int clientsock;
     class ServerThread: public Thread<SendPerfTest*> {
     public:
@@ -129,12 +139,15 @@ class SendPerfTest : public PerfTestBase {
             struct sockaddr_in cliaddr;
             socklen_t len = sizeof(cliaddr);
             int sock = ::accept(param->servsock,(struct sockaddr*)&cliaddr,&len);
+            param->servsideofclisock = sock;
             if (sock < 0)
                 std::cerr << "failed to accept:" << errno << ":" <<strerror(errno) << std::endl;
             char buffer[4096];
-            while (read(sock,buffer,sizeof(buffer)) >= 0) {
-              
-            }
+            int flags = 0;
+            int result = 0;
+            while (int received = ::recv(sock,buffer,sizeof(buffer),flags) >= 0) {
+                result += received;
+            }  
             ::close(sock);
         }
     };
@@ -144,4 +157,7 @@ class SendPerfTest : public PerfTestBase {
 
 PERFTEST_REGISTER(WriteSysCallPerfTest,new WriteSysCallPerfTest());
 PERFTEST_REGISTER(GetUIDSysCallPerfTest,new GetUIDSysCallPerfTest());
-PERFTEST_REGISTER(SendPerfTest,new SendPerfTest());
+PERFTEST_REGISTER(SendPerfTest1,new SendPerfTest(1));
+PERFTEST_REGISTER(SendPerfTest16,new SendPerfTest(16));
+PERFTEST_REGISTER(SendPerfTest128,new SendPerfTest(128));
+PERFTEST_REGISTER(SendPerfTest1024,new SendPerfTest(1024));
