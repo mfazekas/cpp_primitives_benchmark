@@ -152,6 +152,27 @@ public:
     ServerThread* serverthread;
 };
 
+#include <sys/uio.h>
+
+class WritevPerfTest : public SendPerfTest {
+public:
+    WritevPerfTest(int sendsize) : SendPerfTest(sendsize)
+    {}
+    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
+        int result = random_;
+        for (int i = 0; i < rounds_; ++i) {
+            struct iovec iov = {sendbuffer,sendsize};
+            result += ::writev(clientsock,&iov,1);
+        }
+        return result;
+    }
+    std::string name() const {
+        std::ostringstream os;
+        os << "writev " << sendsize << " bytes on TCP loopback";
+        return os.str();
+    }
+};
+
 
 PERFTEST_REGISTER(WriteSysCallPerfTest,new WriteSysCallPerfTest());
 PERFTEST_REGISTER(GetUIDSysCallPerfTest,new GetUIDSysCallPerfTest());
@@ -159,3 +180,7 @@ PERFTEST_REGISTER(SendPerfTest1,new SendPerfTest(1));
 PERFTEST_REGISTER(SendPerfTest16,new SendPerfTest(16));
 PERFTEST_REGISTER(SendPerfTest128,new SendPerfTest(128));
 PERFTEST_REGISTER(SendPerfTest1024,new SendPerfTest(1024));
+PERFTEST_REGISTER(WritevPerfTest1,new WritevPerfTest(1));
+PERFTEST_REGISTER(WritevPerfTest16,new WritevPerfTest(16));
+PERFTEST_REGISTER(WritevPerfTest128,new WritevPerfTest(128));
+PERFTEST_REGISTER(WritevPerfTest1024,new WritevPerfTest(1024));
