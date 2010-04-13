@@ -34,13 +34,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "PerfTestRegistry.h"
 
 #include <sstream>
+
+#ifdef __APPLE__
 #include <libkern/OSAtomic.h>
 
 typedef int32_t AtomicIncrementInt;
 inline void AtomicIncrement(volatile AtomicIncrementInt* ptr) {
     OSAtomicIncrement32(ptr);
 }
+#define HASATOMICOPS 1
+#else
+#define HASATOMICOPS 0
+#endif
 
+#if HASATOMICOPS
 class AtomicIncrementPerfTest : public PerfTestBase {
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
         AtomicIncrementInt result = random_;
@@ -111,3 +118,5 @@ public:
 
 PERFTEST_REGISTER(AtomicIncrement,new AtomicIncrementPerfTest());
 PERFTEST_REGISTER(ContendedAtomicIncrementPerfTest,(new ContendedAtomicIncrementPerfTest()));
+#endif
+
