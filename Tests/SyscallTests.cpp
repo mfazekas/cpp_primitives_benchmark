@@ -106,8 +106,8 @@ public:
         std::cerr << "failed to connect failed" << errno << std::endl;
     }
     virtual void teardown(int roudnds_,int fourtytwo_,int random_) {
+      //::shutdown(clientsock,1);
       ::close(clientsock);
-      ::close(servsideofclisock);
       ::close(servsock);
       serverthread->join();
       delete serverthread;
@@ -126,7 +126,6 @@ public:
     }
     struct sockaddr_in servaddr;
     int servsock;
-    int servsideofclisock;
     int sendsize;
     char sendbuffer[1024*1024];
     
@@ -139,13 +138,12 @@ public:
             struct sockaddr_in cliaddr;
             socklen_t len = sizeof(cliaddr);
             int sock = ::accept(param->servsock,(struct sockaddr*)&cliaddr,&len);
-            param->servsideofclisock = sock;
             if (sock < 0)
                 std::cerr << "failed to accept:" << errno << ":" <<strerror(errno) << std::endl;
             char buffer[4096];
             int flags = 0;
             int result = 0;
-            while (int received = ::recv(sock,buffer,sizeof(buffer),flags) >= 0) {
+            while (int received = ::recv(sock,buffer,sizeof(buffer),flags) > 0) {
                 result += received;
             }  
             ::close(sock);
