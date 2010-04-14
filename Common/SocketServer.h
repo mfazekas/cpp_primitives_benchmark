@@ -38,6 +38,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <sys/types.h>
 #include <signal.h>
+
+static int alarmed = 0;
+static void alarm_handler(int sig) { alarmed = 1; }
  
 class SocketServer {
 public:
@@ -59,6 +62,7 @@ public:
     void stop() {
         int ret = ::close(socket);
         SOCK_ERRORCHECK(ret,"close");
+        signal(SIGALRM, alarm_handler);
         kill(getpid(),SIGALRM);
         accepter->join();
     }
