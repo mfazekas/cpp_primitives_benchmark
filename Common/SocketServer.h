@@ -60,10 +60,9 @@ public:
     }
     
     void stop() {
+        accepter->stop_loop();
         int ret = ::close(socket);
         SOCK_ERRORCHECK(ret,"close");
-        signal(SIGALRM, alarm_handler);
-        kill(getpid(),SIGALRM);
         accepter->join();
     }
     
@@ -85,20 +84,34 @@ public:
     public:
         AccepterThread(SocketServer* server): 
             Thread<SocketServer*>(server) 
-        {}
+        {
+            quit_flag = false;
+        }
+        
+        void stop_loop() {
+            quit_flag = true;
+            signal(SIGALRM, alarm_handler);
+            // hack,hack,hack 
+            // TODO: set quit flag then just connect to wake up
+            usleep(1);
+            
+            kill(getpid(),SIGALRM);
+        }
         
         virtual void run(SocketServer*const & param) {
             char cliaddr[1024];
             socklen_t len = sizeof(cliaddr);
             int accepted = 0;
             int sock = 0;
-            while ((sock = ::accept(param->socket,(struct sockaddr*)&cliaddr,&len)) > 0) {
+            while (!quit_flag && ((sock = ::accept(param->socket,(struct sockaddr*)&cliaddr,&len)) > 0)) {
                 accepted++;
                 ServerThread* thread = new ServerThread(sock);
                 thread->start();
                 param->serverthreads.push_back(thread);
             }
         }
+
+        volatile bool quit_flag;
     };
     
     class ServerThread : public Thread<int> {
