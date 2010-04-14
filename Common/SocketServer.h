@@ -90,12 +90,12 @@ public:
         
         void stop_loop() {
             quit_flag = true;
-            signal(SIGALRM, alarm_handler);
+            signal(SIGINT, alarm_handler);
             // hack,hack,hack 
             // TODO: set quit flag then just connect to wake up
             usleep(1);
             
-            kill(getpid(),SIGALRM);
+            kill(getpid(),SIGINT);
         }
         
         virtual void run(SocketServer*const & param) {
