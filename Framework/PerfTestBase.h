@@ -32,6 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 #include "IPerfTest.h"
 
+#define BEGIN_REPEAT(count)  for(int loop_i = 0; loop_i < count; ++loop_i) 
+#define END_REPEAT           
+
 class PerfTestBase : public IPerfTest {
 public:
     virtual void setup(int& rounds_,int fourtytwo_,int random_);

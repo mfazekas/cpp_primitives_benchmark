@@ -1,3 +1,5 @@
+#ifndef ErrorCheck_H
+#define ErrorCheck_H
 /*
 Copyright (c) 2007-, Miklós Fazekas
 All rights reserved.
@@ -27,51 +29,19 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-#include "PerfTestBase.h"
-#include "PerfTestRegistry.h"
- 
-class RegisterAddPerfTest : public PerfTestBase {
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        register int result = random_;
-        BEGIN_REPEAT(rounds_) {
-            result += random_;
-        } END_REPEAT;
-        return result;
-    }
-    std::string name() const {
-        return "register int::operator+=";
-    }
-};
 
-class IntDividePerfTest : public PerfTestBase {
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        register int result = random_;
-        BEGIN_REPEAT(rounds_) {
-            result += result/fourtytwo_;
-        } END_REPEAT;
-        return result;
-    }
-    std::string name() const {
-        return "int::operator/";
-    }
-};
+#include <sys/errno.h>
 
-class VolatileAddPerfTest : public PerfTestBase {
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        int32_t result;
-        BEGIN_REPEAT(rounds_) {
-            result += random_;
-        } END_REPEAT;
-        return result;
+#define SOCK_ERRORCHECK(rc,namestr) \
+    if (rc < 0) { \
+       fprintf(stderr,namestr" failed:%d %s\n",errno,strerror(errno)); \
+       exit(1); \
     }
-    std::string name() const {
-        return "volatile int::operator+=";
+
+#define MAKESURE(cond,str) \
+    if (!(cond)) { \
+        fprintf(stderr,str" "#cond" failed!\n");  \
+        exit(1); \
     }
-    volatile int result;
-};
 
-PERFTEST_REGISTER(RegisterAddPerfTest,new RegisterAddPerfTest())
-PERFTEST_REGISTER(VolatileAddPerfTest,new VolatileAddPerfTest())
-PERFTEST_REGISTER(IntDividePerfTest,new IntDividePerfTest())
-
+#endif

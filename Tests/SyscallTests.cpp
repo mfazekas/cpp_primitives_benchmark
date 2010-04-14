@@ -28,14 +28,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Thread.h"
- 
+
+#include "ErrorCheck.h"
+
 #include "PerfTestBase.h"
 #include "PerfTestRegistry.h"
 #include <iostream>
 #include <sys/errno.h>
 #include <fcntl.h>
-#include <arpa/inet.h>
 #include <sstream>
 
 class GetUIDSysCallPerfTest : public PerfTestBase {
@@ -74,113 +74,7 @@ class WriteSysCallPerfTest : public PerfTestBase {
     int fd;
 };
 
-#include <sys/socket.h>
-
-class SendPerfTest : public PerfTestBase {
-public:
-    SendPerfTest(int sendsize) : sendsize(sendsize)
-    {}
-    virtual void setup(int& roudnds_,int fourtytwo_,int random_) {
-      servsock = ::socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
-      if (servsock < 0) 
-        std::cerr << "failed to create socket servsock:" << errno << ":" << strerror(errno) << std::endl;
-      
-      memset(&servaddr, 0, sizeof(servaddr));
-      servaddr.sin_family = AF_INET;
-      servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); /*INADDR_ANY*/
-      servaddr.sin_port = 0;
-      if (::bind(servsock,(struct sockaddr *)&servaddr,sizeof(servaddr)) < 0)
-        std::cerr << "failed to bind:" << errno << ":" <<strerror(errno) << std::endl;
-      if (::listen(servsock, 3) < 0)
-        std::cerr << "failed to listen:" << errno << ":" <<strerror(errno) << std::endl;
-      socklen_t size = sizeof(servaddr);
-      ::getsockname(servsock, (struct sockaddr *)&servaddr,&size);
-      
-      serverthread = new ServerThread(this); 
-      serverthread->start();
-      
-      clientsock = ::socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-      if (clientsock < 0) 
-        std::cerr << "failed to create socket" << errno << std::endl;
-      if (::connect(clientsock,(struct sockaddr *)&servaddr,size) < 0)
-        std::cerr << "failed to connect failed" << errno << std::endl;
-    }
-    virtual void teardown(int roudnds_,int fourtytwo_,int random_) {
-      //::shutdown(clientsock,1);
-      ::close(clientsock);
-      ::close(servsock);
-      serverthread->join();
-      delete serverthread;
-    }
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        int result = random_;
-        for (int i = 0; i < rounds_; ++i) {
-            result += ::send(clientsock,sendbuffer,sendsize,0);
-        }
-        return result;
-    }
-    std::string name() const {
-        std::ostringstream os;
-        os << "send " << sendsize << " bytes on TCP loopback";
-        return os.str();
-    }
-    struct sockaddr_in servaddr;
-    int servsock;
-    int sendsize;
-    char sendbuffer[1024*1024];
-    
-    int clientsock;
-    class ServerThread: public Thread<SendPerfTest*> {
-    public:
-        ServerThread(SendPerfTest* param) :
-            Thread<SendPerfTest*>(param) {}
-        virtual void run( SendPerfTest* const& param) {
-            struct sockaddr_in cliaddr;
-            socklen_t len = sizeof(cliaddr);
-            int sock = ::accept(param->servsock,(struct sockaddr*)&cliaddr,&len);
-            if (sock < 0)
-                std::cerr << "failed to accept:" << errno << ":" <<strerror(errno) << std::endl;
-            char buffer[4096];
-            int flags = 0;
-            int result = 0;
-            while (int received = ::recv(sock,buffer,sizeof(buffer),flags) > 0) {
-                result += received;
-            }  
-            ::close(sock);
-        }
-    };
-    ServerThread* serverthread;
-};
-
-#include <sys/uio.h>
-
-class WritevPerfTest : public SendPerfTest {
-public:
-    WritevPerfTest(int sendsize) : SendPerfTest(sendsize)
-    {}
-    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
-        int result = random_;
-        for (int i = 0; i < rounds_; ++i) {
-            struct iovec iov = {sendbuffer,sendsize};
-            result += ::writev(clientsock,&iov,1);
-        }
-        return result;
-    }
-    std::string name() const {
-        std::ostringstream os;
-        os << "writev " << sendsize << " bytes on TCP loopback";
-        return os.str();
-    }
-};
 
 
 PERFTEST_REGISTER(WriteSysCallPerfTest,new WriteSysCallPerfTest());
 PERFTEST_REGISTER(GetUIDSysCallPerfTest,new GetUIDSysCallPerfTest());
-PERFTEST_REGISTER(SendPerfTest1,new SendPerfTest(1));
-PERFTEST_REGISTER(SendPerfTest16,new SendPerfTest(16));
-PERFTEST_REGISTER(SendPerfTest128,new SendPerfTest(128));
-PERFTEST_REGISTER(SendPerfTest1024,new SendPerfTest(1024));
-PERFTEST_REGISTER(WritevPerfTest1,new WritevPerfTest(1));
-PERFTEST_REGISTER(WritevPerfTest16,new WritevPerfTest(16));
-PERFTEST_REGISTER(WritevPerfTest128,new WritevPerfTest(128));
-PERFTEST_REGISTER(WritevPerfTest1024,new WritevPerfTest(1024));

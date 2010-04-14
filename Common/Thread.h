@@ -1,6 +1,3 @@
-#ifndef ThreadHeader
-#define ThreadHeader
-
 /*
 Copyright (c) 2007-, Miklós Fazekas
 All rights reserved.
@@ -31,6 +28,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef Thread_H
+#define Thread_H
 
 #include <pthread.h>
 #include <stdlib.h>
