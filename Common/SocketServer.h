@@ -57,6 +57,7 @@ public:
     void stop() {
         int ret = ::close(socket);
         SOCK_ERRORCHECK(ret,"close");
+        kill(getpid(),SIGPIPE);
         accepter->join();
     }
     
@@ -157,7 +158,6 @@ public:
         virtual void run(const int& param) {
             int socket = param;
             std::string type = readandapplyparams(socket);
-            fprintf(stderr,"type:%s\n",type.c_str());
             if (type == std::string("/dev/null")) {
                 null_loop(socket);
             } else if (type == std::string("echo")) {
