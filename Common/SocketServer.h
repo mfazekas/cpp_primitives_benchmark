@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Thread.h"
 #include "ErrorCheck.h"
 #include <sstream>
+#include <sys/types.h>
+#include <signal.h>
  
 class SocketServer {
 public:
