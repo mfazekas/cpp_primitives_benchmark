@@ -59,7 +59,7 @@ public:
     void stop() {
         int ret = ::close(socket);
         SOCK_ERRORCHECK(ret,"close");
-        kill(getpid(),SIGPIPE);
+        kill(getpid(),SIGALRM);
         accepter->join();
     }
     
