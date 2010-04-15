@@ -101,19 +101,23 @@ public:
             
             fd_set rset;
             FD_ZERO(&rset);
+            FD_SET(param->socket,&rset);
             
             fd_set eset;
             FD_ZERO(&eset);
-            
-            FD_SET(param->socket,&rset);
             FD_SET(param->socket,&eset);
+            
+             
             while (1) {
                 if (quit_flag) break;
+
+                struct timeval tv = {0,100*1000};
                 FD_ZERO(&rset);
                 FD_SET(param->socket,&rset);
                 FD_ZERO(&eset);
                 FD_SET(param->socket,&eset);
-                ::select(param->socket+1,&rset,NULL,&eset,NULL);
+                while ((::select(param->socket+1,&rset,NULL,&eset,&tv) == 0) && !quit_flag) {
+                }
                 if (quit_flag) break;
                 if ((sock = ::accept(param->socket,(struct sockaddr*)&cliaddr,&len)) > 0) {
                     accepted++;
