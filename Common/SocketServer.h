@@ -109,6 +109,10 @@ public:
             FD_SET(param->socket,&eset);
             while (1) {
                 if (quit_flag) break;
+                FD_ZERO(&rset);
+                FD_SET(param->socket,&rset);
+                FD_ZERO(&eset);
+                FD_SET(param->socket,&eset);
                 ::select(param->socket+1,&rset,NULL,&eset,NULL);
                 if (quit_flag) break;
                 if ((sock = ::accept(param->socket,(struct sockaddr*)&cliaddr,&len)) > 0) {
