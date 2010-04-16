@@ -40,18 +40,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <sys/types.h>
-#include <signal.h>
 
-static int alarmed = 0;
-static void alarm_handler(int sig) { alarmed = 1; }
- 
 class SocketServer {
 public:
     SocketServer() : socket(-1),accepter(0) {
     }
     
     ~SocketServer() {
-        for (int i = 0; i < serverthreads.size(); ++i) {
+        for (size_t i = 0; i < serverthreads.size(); ++i) {
             delete serverthreads[i];
         }        
     }
@@ -69,7 +65,7 @@ public:
     }
     
     void join() {
-        for (int i = 0; i < serverthreads.size(); ++i) {
+        for (size_t i = 0; i < serverthreads.size(); ++i) {
             serverthreads[i]->join();
         }
     }
@@ -148,7 +144,7 @@ public:
             int ret = ::recv(socket,reinterpret_cast<char*> (&len), sizeof(len), MSG_WAITALL);
             SOCK_ERRORCHECK(ret-sizeof(len),"recv(&len,MSG_WAITALL)");
             len = htons(len);
-            MAKESURE(len < sizeof(buffer),"len is too large");
+            MAKESURE(size_t(len) < sizeof(buffer),"len is too large");
             ret = ::recv(socket,buffer,len,MSG_WAITALL);
             MAKESURE(ret == len,"recv MSG_WAITALL");
             return std::string(buffer,len);
