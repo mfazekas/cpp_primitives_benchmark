@@ -55,8 +55,8 @@ public:
     char src[42+size];
 };
 
-PERFTEST_REGISTER(MemCpyPerfTest1,new MemCpyPerfTest<10>())
-PERFTEST_REGISTER(MemCpyPerfTest2,new MemCpyPerfTest<100>())
-PERFTEST_REGISTER(MemCpyPerfTest3,new MemCpyPerfTest<1024>())
-PERFTEST_REGISTER(MemCpyPerfTest4,new MemCpyPerfTest<4096>())
-PERFTEST_REGISTER(MemCpyPerfTest5,new MemCpyPerfTest<4*4096>())
+PERFTEST_AUTOREGISTER(MemCpyPerfTest1,new MemCpyPerfTest<10>())
+PERFTEST_AUTOREGISTER(MemCpyPerfTest2,new MemCpyPerfTest<100>())
+PERFTEST_AUTOREGISTER(MemCpyPerfTest3,new MemCpyPerfTest<1024>())
+PERFTEST_AUTOREGISTER(MemCpyPerfTest4,new MemCpyPerfTest<4096>())
+PERFTEST_AUTOREGISTER(MemCpyPerfTest5,new MemCpyPerfTest<4*4096>())

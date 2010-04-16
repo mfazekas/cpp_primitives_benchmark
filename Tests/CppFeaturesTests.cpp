@@ -98,8 +98,8 @@ public:
     Base* base;
 };
 
-PERFTEST_REGISTER(VirtualCallPerfTest,new VirtualCallPerfTest());
-PERFTEST_REGISTER(DynamicCastPerfTest,new DynamicCastPerfTest());
+PERFTEST_AUTOREGISTER(VirtualCallPerfTest,new VirtualCallPerfTest());
+PERFTEST_AUTOREGISTER(DynamicCastPerfTest,new DynamicCastPerfTest());
 
 
 

@@ -76,20 +76,12 @@ public:
         return os.str();
     }    
 };
-
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-
-//#error "Hello "TOSTRING(__LINE__)
-
-#define REGISTER_(expression) \
-  PERFTEST_REGISTER(Registry##__LINE__,)
   
-PERFTEST_REGISTER(MallocPerfTest1,new MallocFreeCallPerfTest<10>());
-PERFTEST_REGISTER(MallocPerfTest2,new MallocFreeCallPerfTest<100>());
-PERFTEST_REGISTER(MallocPerfTest3,new MallocFreeCallPerfTest<1024>());
-PERFTEST_REGISTER(MallocPerfTest4,new MallocFreeCallPerfTest<8192>());
+PERFTEST_AUTOREGISTER(MallocPerfTest1,new MallocFreeCallPerfTest<10>());
+PERFTEST_AUTOREGISTER(MallocPerfTest2,new MallocFreeCallPerfTest<100>());
+PERFTEST_AUTOREGISTER(MallocPerfTest3,new MallocFreeCallPerfTest<1024>());
+PERFTEST_AUTOREGISTER(MallocPerfTest4,new MallocFreeCallPerfTest<8192>());
 
-PERFTEST_REGISTER(MallocFreePerfTest1,(new LotMallocFreeCallPerfTest<10,1024>()));
-PERFTEST_REGISTER(MallocFreePerfTest2,(new LotMallocFreeCallPerfTest<100,1024>()));
-PERFTEST_REGISTER(MallocFreePerfTest3,(new LotMallocFreeCallPerfTest<1024,1024>()));
+PERFTEST_AUTOREGISTER(MallocFreePerfTest1,(new LotMallocFreeCallPerfTest<10,1024>()));
+PERFTEST_AUTOREGISTER(MallocFreePerfTest2,(new LotMallocFreeCallPerfTest<100,1024>()));
+PERFTEST_AUTOREGISTER(MallocFreePerfTest3,(new LotMallocFreeCallPerfTest<1024,1024>()));

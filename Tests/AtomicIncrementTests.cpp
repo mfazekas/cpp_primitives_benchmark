@@ -116,7 +116,7 @@ public:
 };
 
 
-PERFTEST_REGISTER(AtomicIncrement,new AtomicIncrementPerfTest());
-PERFTEST_REGISTER(ContendedAtomicIncrementPerfTest,(new ContendedAtomicIncrementPerfTest()));
+PERFTEST_AUTOREGISTER(AtomicIncrement,new AtomicIncrementPerfTest());
+PERFTEST_AUTOREGISTER(ContendedAtomicIncrementPerfTest,(new ContendedAtomicIncrementPerfTest()));
 #endif
 

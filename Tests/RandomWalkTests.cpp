@@ -79,14 +79,14 @@ public:
     Node *nodes;
 };
 
-PERFTEST_REGISTER(RandomWalkTests256,new RandomWalkTests(256));
-PERFTEST_REGISTER(RandomWalkTests1024,new RandomWalkTests(1024));
-PERFTEST_REGISTER(RandomWalkTests16kb,new RandomWalkTests(16*1024));
-PERFTEST_REGISTER(RandomWalkTests32kb,new RandomWalkTests(32*1024));
-PERFTEST_REGISTER(RandomWalkTests64kb,new RandomWalkTests(64*1024));
-PERFTEST_REGISTER(RandomWalkTests256kb,new RandomWalkTests(256*1024));
-PERFTEST_REGISTER(RandomWalkTests512kb,new RandomWalkTests(512*1024));
-PERFTEST_REGISTER(RandomWalkTests1M,new RandomWalkTests(1024*1024));
-PERFTEST_REGISTER(RandomWalkTests2M,new RandomWalkTests(2*1024*1024));
-PERFTEST_REGISTER(RandomWalkTests4M,new RandomWalkTests(4*1024*1024));
-PERFTEST_REGISTER(RandomWalkTests16M,new RandomWalkTests(16*1024*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests256,new RandomWalkTests(256));
+PERFTEST_AUTOREGISTER(RandomWalkTests1024,new RandomWalkTests(1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests16kb,new RandomWalkTests(16*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests32kb,new RandomWalkTests(32*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests64kb,new RandomWalkTests(64*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests256kb,new RandomWalkTests(256*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests512kb,new RandomWalkTests(512*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests1M,new RandomWalkTests(1024*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests2M,new RandomWalkTests(2*1024*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests4M,new RandomWalkTests(4*1024*1024));
+PERFTEST_AUTOREGISTER(RandomWalkTests16M,new RandomWalkTests(16*1024*1024));

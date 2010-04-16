@@ -74,7 +74,5 @@ class WriteSysCallPerfTest : public PerfTestBase {
     int fd;
 };
 
-
-
-PERFTEST_REGISTER(WriteSysCallPerfTest,new WriteSysCallPerfTest());
-PERFTEST_REGISTER(GetUIDSysCallPerfTest,new GetUIDSysCallPerfTest());
+PERFTEST_AUTOREGISTER(WriteSysCallPerfTest,new WriteSysCallPerfTest());
+PERFTEST_AUTOREGISTER(GetUIDSysCallPerfTest,new GetUIDSysCallPerfTest());

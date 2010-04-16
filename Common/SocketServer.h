@@ -30,12 +30,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "Thread.h"
+#include "ErrorCheck.h"
+
+#include <sstream>
+#include <vector>
+
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
-#include "Thread.h"
-#include "ErrorCheck.h"
-#include <sstream>
 #include <sys/types.h>
 #include <signal.h>
 
@@ -110,13 +113,14 @@ public:
              
             while (1) {
                 if (quit_flag) break;
-
                 struct timeval tv = {0,100*1000};
-                FD_ZERO(&rset);
-                FD_SET(param->socket,&rset);
-                FD_ZERO(&eset);
-                FD_SET(param->socket,&eset);
                 while ((::select(param->socket+1,&rset,NULL,&eset,&tv) == 0) && !quit_flag) {
+                    FD_ZERO(&rset);
+                    FD_SET(param->socket,&rset);
+                    FD_ZERO(&eset);
+                    FD_SET(param->socket,&eset);
+                    tv.tv_sec = 0;
+                    tv.tv_usec = 100*1000;
                 }
                 if (quit_flag) break;
                 if ((sock = ::accept(param->socket,(struct sockaddr*)&cliaddr,&len)) > 0) {

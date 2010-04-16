@@ -71,7 +71,7 @@ class VolatileAddPerfTest : public PerfTestBase {
     volatile int result;
 };
 
-PERFTEST_REGISTER(RegisterAddPerfTest,new RegisterAddPerfTest())
-PERFTEST_REGISTER(VolatileAddPerfTest,new VolatileAddPerfTest())
-PERFTEST_REGISTER(IntDividePerfTest,new IntDividePerfTest())
+PERFTEST_AUTOREGISTER(RegisterAddPerfTest,new RegisterAddPerfTest())
+PERFTEST_AUTOREGISTER(VolatileAddPerfTest,new VolatileAddPerfTest())
+PERFTEST_AUTOREGISTER(IntDividePerfTest,new IntDividePerfTest())
 

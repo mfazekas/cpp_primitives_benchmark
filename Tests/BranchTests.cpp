@@ -48,5 +48,5 @@ class SimpleIfPerfTest : public PerfTestBase {
     }
 };
 
-PERFTEST_REGISTER(SimpleIfPerfTest,new SimpleIfPerfTest());
+PERFTEST_AUTOREGISTER(SimpleIfPerfTest,new SimpleIfPerfTest());
 

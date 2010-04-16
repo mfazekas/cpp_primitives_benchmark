@@ -208,7 +208,7 @@ public:
 };
 
 
-PERFTEST_REGISTER(PThreadMutexPerfTest,(new PThreadMutexPerfTest()));
-PERFTEST_REGISTER(ContendedPthreadMutexPerfTest,(new ContendedPthreadMutexPerfTest()));
-PERFTEST_REGISTER(PThreadRWLockReadLockPerfTest,new PThreadRWLockReadLockPerfTest());
-PERFTEST_REGISTER(ContendedPThreadRWLockReadLockPerfTest,new ContendedPThreadRWLockReadLockPerfTest());
+PERFTEST_AUTOREGISTER(PThreadMutexPerfTest,(new PThreadMutexPerfTest()));
+PERFTEST_AUTOREGISTER(ContendedPthreadMutexPerfTest,(new ContendedPthreadMutexPerfTest()));
+PERFTEST_AUTOREGISTER(PThreadRWLockReadLockPerfTest,new PThreadRWLockReadLockPerfTest());
+PERFTEST_AUTOREGISTER(ContendedPThreadRWLockReadLockPerfTest,new ContendedPThreadRWLockReadLockPerfTest());

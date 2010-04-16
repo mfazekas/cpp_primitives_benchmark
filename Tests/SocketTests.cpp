@@ -40,13 +40,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <sstream>
+#include <netdb.h>
 
 
 class SendPerfTest : public PerfTestBase {
 public:
     SendPerfTest(int sendsize) : sendsize(sendsize)
     {}
+    
+    
     virtual void setup(int& roudnds_,int fourtytwo_,int random_) {
+      startserver();
+      clientsock = connectclientsocket();
+      configureclientsocket(clientsock);
+      
+      std::string m = mode();
+      int rc = ::send(clientsock,m.c_str(),m.size(),0);
+      SOCK_ERRORCHECK(rc,"send");
+    }
+    
+    virtual int connectclientsocket() {
+      socklen_t size = sizeof(servaddr);
+      int rc = ::getsockname(servsock, (struct sockaddr *)&servaddr,&size);
+      SOCK_ERRORCHECK(rc,"getsockname");
+      
+      int clientsock = ::socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+      SOCK_ERRORCHECK(clientsock,"socket");
+      rc = ::connect(clientsock,(struct sockaddr *)&servaddr,size);
+      SOCK_ERRORCHECK(rc,"connect");
+      return clientsock;
+    }
+    
+    virtual void startserver() {
       servsock = ::socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
       SOCK_ERRORCHECK(servsock,"socket");
       
@@ -62,24 +87,13 @@ public:
       
       socketserver = new SocketServer();
       socketserver->start(servsock);
-
-      clientsock = connectclientsocket(servsock);
-      configureclientsocket(clientsock);
-      std::string m = mode();
-      rc = ::send(clientsock,m.c_str(),m.size(),0);
-      SOCK_ERRORCHECK(rc,"send");
     }
     
-    virtual int connectclientsocket(int servsock) {
-      socklen_t size = sizeof(servaddr);
-      int rc = ::getsockname(servsock, (struct sockaddr *)&servaddr,&size);
-      SOCK_ERRORCHECK(rc,"getsockname");
-      
-      int clientsock = ::socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-      SOCK_ERRORCHECK(clientsock,"socket");
-      rc = ::connect(clientsock,(struct sockaddr *)&servaddr,size);
-      SOCK_ERRORCHECK(rc,"connect");
-      return clientsock;
+    virtual void stopserver() {
+      socketserver->stop();
+      socketserver->join();
+      delete socketserver;
+      socketserver =0;
     }
     
     virtual void configureclientsocket(int socket) {}
@@ -93,10 +107,7 @@ public:
       int rc = ::close(clientsock);
       SOCK_ERRORCHECK(rc,"close");
       
-      socketserver->stop();
-      socketserver->join();
-      delete socketserver;
-      socketserver =0;
+      stopserver();
     }
     
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
@@ -125,13 +136,64 @@ public:
 
 class RoundTripPerfTest : public SendPerfTest {
 public:
-    RoundTripPerfTest(int sendsize, bool tcpnodelay) : SendPerfTest(sendsize), tcpnodelay(tcpnodelay)
+    RoundTripPerfTest(int sendsize, bool tcpnodelay) : 
+        SendPerfTest(sendsize), tcpnodelay(tcpnodelay), remoteaddr()
     {}
+    RoundTripPerfTest(const char* remoteaddr, int sendsize, bool tcpnodelay) : 
+        SendPerfTest(sendsize), tcpnodelay(tcpnodelay), remoteaddr(remoteaddr)
+    {}
+    
+    struct addrinfo* parse_host_port(const std::string& host_port) {
+      std::string::size_type loc = host_port.find_last_of(':');
+      MAKESURE(loc != std::string::npos, "host_port should contain a :");
+      std::string host = host_port.substr(0,loc);
+      std::string port = host_port.substr(loc+1);
+      
+      struct addrinfo hints, *res;
+      memset(&hints, 0, sizeof(hints));
+      hints.ai_family = PF_UNSPEC;
+      hints.ai_socktype = SOCK_STREAM;
+      int rc = getaddrinfo(host.c_str(),port.c_str(),&hints,&res);
+      MAKESURE(rc == 0,"getaddrinfo failed!");
+      return res;
+    }
+    
+    virtual int connectclientsocket() {
+      if (remoteaddr.size()) {
+        addrinfo* ret = parse_host_port(remoteaddr);
+        for (addrinfo* res = ret; res; res = res->ai_next) {
+          int clientsock = ::socket(res->ai_family,res->ai_socktype,res->ai_protocol);
+          SOCK_ERRORCHECK(clientsock,"socket");
+          int rc = ::connect(clientsock,res->ai_addr,res->ai_addrlen);
+          SOCK_ERRORCHECK(rc,"connect");
+          freeaddrinfo(ret);
+          return clientsock;
+        }
+        MAKESURE(false,"cannot resolve host port");
+        return -1;
+      } else {
+        return SendPerfTest::connectclientsocket();
+      }
+    }
+    virtual void startserver() {
+      if (remoteaddr.size()) {
+      } else {
+        SendPerfTest::startserver();
+      }
+    }
+    virtual void stopserver() {
+      if (remoteaddr.size()) {
+      } else {
+        SendPerfTest::connectclientsocket();
+      }
+    }
+    
     virtual void configureclientsocket(int socket) {
         int flag = tcpnodelay;
         int rc = ::setsockopt(socket,IPPROTO_TCP,TCP_NODELAY,(char*)&flag,sizeof(flag));
         SOCK_ERRORCHECK(rc,"::setsockopt - TCP_NODELAY");
     }
+    
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
         int result = random_;
         for (int i = 0; i < rounds_; ++i) {
@@ -141,6 +203,7 @@ public:
         }
         return result;
     } 
+    
     virtual std::string mode() {
         std::ostringstream os;
         os << "echo";
@@ -148,15 +211,26 @@ public:
         std::string mode = SocketServer::typemsg(os.str().c_str());
         return mode;
     }
+    
     std::string name() const {
         std::ostringstream os;
-        os << "send and receive (roundtrip) " << sendsize << " bytes on TCP loopback tcpnodelay:" << tcpnodelay;
+        
+        os << "send and receive (roundtrip) " << sendsize << " bytes on TCP ";
+        if (remoteaddr.size()) {
+            os << remoteaddr << ":";
+        } else {
+            os << "loopback";
+        }
+        os << " tcpnodelay:" << tcpnodelay;
         return os.str();
     }
+    
     int defaultRounds() const { 
         return 1000; 
     }
+
     bool tcpnodelay;
+    std::string remoteaddr;
 };
 
 #include <sys/uio.h>
@@ -180,17 +254,29 @@ public:
     }
 };
 
-PERFTEST_REGISTER(SendPerfTest1,new SendPerfTest(1));
-PERFTEST_REGISTER(SendPerfTest16,new SendPerfTest(16));
-PERFTEST_REGISTER(SendPerfTest128,new SendPerfTest(128));
-PERFTEST_REGISTER(SendPerfTest1024,new SendPerfTest(1024));
-PERFTEST_REGISTER(WritevPerfTest1,new WritevPerfTest(1));
-PERFTEST_REGISTER(WritevPerfTest16,new WritevPerfTest(16));
-PERFTEST_REGISTER(WritevPerfTest128,new WritevPerfTest(128));
-PERFTEST_REGISTER(WritevPerfTest1024,new WritevPerfTest(1024));
+PERFTEST_AUTOREGISTER(SendPerfTest1,new SendPerfTest(1));
+PERFTEST_AUTOREGISTER(SendPerfTest16,new SendPerfTest(16));
+PERFTEST_AUTOREGISTER(SendPerfTest128,new SendPerfTest(128));
+PERFTEST_AUTOREGISTER(SendPerfTest1024,new SendPerfTest(1024));
+PERFTEST_AUTOREGISTER(WritevPerfTest1,new WritevPerfTest(1));
+PERFTEST_AUTOREGISTER(WritevPerfTest16,new WritevPerfTest(16));
+PERFTEST_AUTOREGISTER(WritevPerfTest128,new WritevPerfTest(128));
+PERFTEST_AUTOREGISTER(WritevPerfTest1024,new WritevPerfTest(1024));
 
-PERFTEST_REGISTER(RoundTripPerfTest1,new RoundTripPerfTest(1,false));
-PERFTEST_REGISTER(RoundTripPerfTest1024,new RoundTripPerfTest(1024,false));
-PERFTEST_REGISTER(RoundTripPerfTest1NoNagle,new RoundTripPerfTest(1,true));
-PERFTEST_REGISTER(RoundTripPerfTest1024NoNagle,new RoundTripPerfTest(1024,true));
+
+PERFTEST_AUTOREGISTER(RoundTripPerfTest1,new RoundTripPerfTest(1,false));
+PERFTEST_AUTOREGISTER(RoundTripPerfTest1024,new RoundTripPerfTest(1024,false));
+PERFTEST_AUTOREGISTER(RoundTripPerfTest1NoNagle,new RoundTripPerfTest(1,true));
+PERFTEST_AUTOREGISTER(RoundTripPerfTest1024NoNagle,new RoundTripPerfTest(1024,true));
+
+static struct RegisterServerTests {
+  RegisterServerTests() {
+    if (getenv("SERVER_ADDR") != 0) {
+      PERFTEST_REGISTER(new RoundTripPerfTest(getenv("SERVER_ADDR"),1,false));
+      PERFTEST_REGISTER(new RoundTripPerfTest(getenv("SERVER_ADDR"),1024,false));
+      PERFTEST_REGISTER(new RoundTripPerfTest(getenv("SERVER_ADDR"),1,true));
+      PERFTEST_REGISTER(new RoundTripPerfTest(getenv("SERVER_ADDR"),1024,true));
+    }
+  }
+} regsiterServerTests;
 
