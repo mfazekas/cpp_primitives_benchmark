@@ -1,7 +1,7 @@
 #ifndef SocketServer_H
 #define SocketServer_H
 /*
-Copyright (c) 2007-, Miklós Fazekas
+Copyright (c) 2007-, cpp_primitives_benchmark contributors
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
