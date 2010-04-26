@@ -62,7 +62,42 @@ class IntDividePerfTest : public PerfTestBase {
     std::string name() const {
         return "int::operator/";
     }
-};
+};       
+
+class PlumHallPerfTest : public PerfTestBase {
+    virtual int perform(int& rounds_,int fourtytwo_,int random_) {
+        rounds_ = 1000*(rounds_/1000)
+        register int a = random_;
+        register int b = fourtytwo_;
+        BEGIN_REPEAT(rounds_) {
+            /* inner loop executes 1000 selected operations */
+            for (c = 1; c <= 40; ++c)
+			{
+			a = a+b+c; b = a>>1; a = b%10; m[a] = a; b = m[a]-b-c;
+			a = b==c; b = a|c; a = !b; b = a+c; a = b>c;
+			}
+        } END_REPEAT;
+        return a;
+    }
+    std::string name() const {
+        return "various int operators";
+    }
+};         
+/* plu hall for doulbes:
+
+ * inner loop executes 1000 selected operations *
+	for (c = 1; c <= 40; ++c)
+		{
+		a = a+b+c; b = a*2; a = b/10; a = -a; b = -a-b-c;
+		a = b==c; b = a+c; a = !b; b = a+c; a = b>c;
+		}
+        extern void f3();  * in separate source file *
+
+        void f2() { f3();f3();f3();f3();f3();f3();f3();f3();f3();f3();} * 10 *
+        void f1() { f2();f2();f2();f2();f2();f2();f2();f2();f2();f2();} * 10 *
+        void f0() { f1();f1();f1();f1();f1();f1();f1();f1();f1();} * 9 *
+   
+*/
 
 class VolatileAddPerfTest : public PerfTestBase {
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
