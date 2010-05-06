@@ -66,12 +66,14 @@ class IntDividePerfTest : public PerfTestBase {
 
 class PlumHallPerfTest : public PerfTestBase {
     virtual int perform(int& rounds_,int fourtytwo_,int random_) {
-        rounds_ = 1000*(rounds_/1000)
         register int a = random_;
         register int b = fourtytwo_;
-        BEGIN_REPEAT(rounds_) {
-            /* inner loop executes 1000 selected operations */
-            for (c = 1; c <= 40; ++c)
+        static int m[10] = {1,2,3,4,5,6,7,8,9};
+        int actrounds = rounds_/1000;
+        rounds_ = actrounds*1000;
+        BEGIN_REPEAT(actrounds) {
+          /* inner loop executes 1000 selected operations */
+          for (int c = 1; c <= 40; ++c)
 			{
 			a = a+b+c; b = a>>1; a = b%10; m[a] = a; b = m[a]-b-c;
 			a = b==c; b = a|c; a = !b; b = a+c; a = b>c;
@@ -118,4 +120,5 @@ PERFTEST_AUTOREGISTER(VolatileAddPerfTest,new VolatileAddPerfTest());
 PERFTEST_AUTOREGISTER(ThreeIndependentRegisterAddPerfTest,new ThreeIndependentRegisterAddPerfTest());
 PERFTEST_AUTOREGISTER(TwoIndependentRegisterAddPerfTest,new TwoIndependentRegisterAddPerfTest());
 PERFTEST_AUTOREGISTER(IntDividePerfTest,new IntDividePerfTest());
+PERFTEST_AUTOREGISTER(PlumHallPerfTest,new PlumHallPerfTest());
 

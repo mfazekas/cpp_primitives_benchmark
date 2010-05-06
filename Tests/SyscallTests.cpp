@@ -1,5 +1,3 @@
-
-
 #include "ErrorCheck.h"
 
 #include "PerfTestBase.h"
@@ -8,6 +6,21 @@
 #include <sys/errno.h>
 #include <fcntl.h>
 #include <sstream>
+#include <sys/time.h>
+
+class GetTimeOfDayPerfTest : public PerfTestBase {
+    virtual int perform (int& rounds_,int fourtytwo_,int random_) {
+        int result = random_;
+        struct timeval rv;
+        for (int i = 0; i < rounds_; ++i) {
+            result += gettimeofday(&rv,0);
+        }
+        return result;
+    }
+    std::string name() const {
+        return "syscall gettimeofday";
+    }
+};
 
 class GetUIDSysCallPerfTest : public PerfTestBase {
     virtual int perform (int& rounds_,int fourtytwo_,int random_) {
@@ -45,5 +58,6 @@ class WriteSysCallPerfTest : public PerfTestBase {
     int fd;
 };
 
+PERFTEST_AUTOREGISTER(GetTimeOfDayPerfTest, new GetTimeOfDayPerfTest());
 PERFTEST_AUTOREGISTER(WriteSysCallPerfTest,new WriteSysCallPerfTest());
 PERFTEST_AUTOREGISTER(GetUIDSysCallPerfTest,new GetUIDSysCallPerfTest());
